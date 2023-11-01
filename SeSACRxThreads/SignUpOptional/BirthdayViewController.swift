@@ -7,6 +7,8 @@
  
 import UIKit
 import SnapKit
+import RxSwift
+import RxCocoa
 
 class BirthdayViewController: UIViewController {
     
@@ -66,6 +68,13 @@ class BirthdayViewController: UIViewController {
   
     let nextButton = PointButton(title: "가입하기")
     
+    let birthday: BehaviorSubject<Date> = BehaviorSubject(value: .now)
+    let year = BehaviorSubject(value: 2020)
+//    let year = Observable.of(2020)
+    let month = BehaviorSubject(value: 12)
+    let day = BehaviorSubject(value: 22)
+    let disposeBag = DisposeBag()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -74,6 +83,51 @@ class BirthdayViewController: UIViewController {
         configureLayout()
         
         nextButton.addTarget(self, action: #selector(nextButtonClicked), for: .touchUpInside)
+        
+        bind()
+    }
+    
+    func bind() {
+        year
+            .observe(on: MainScheduler.instance) // Schedular - Main Thread에서 동작하게 해주는 코드
+            .map { "\($0)년" }
+            .subscribe(with: self) { owner, value in
+                owner.yearLabel.text = value
+            } onDisposed: { owner in
+                print("yaer dispose")
+            }
+            .disposed(by: disposeBag)
+        
+        month
+            .subscribe(with: self) { owner, value in
+                owner.monthLabel.text = "\(value)월"
+            } onDisposed: { owner in
+                print("month dispose")
+            }
+            .disposed(by: disposeBag)
+        
+        day
+            .map { "\($0)일" }
+            .bind(to: dayLabel.rx.text)
+            .disposed(by: disposeBag)
+        
+        birthDayPicker.rx.date // 데이트피커에서 선택한 날짜가 birthday값에 전달
+            .bind(to: birthday)
+            .disposed(by: disposeBag)
+        
+        birthday // 데이트피커로 부터 받아온 날짜를 각 년, 월, 일 label에 전달한다
+            .subscribe(with: self) { owner, date in
+                
+                let component = Calendar.current.dateComponents([.year, .month, .day], from: date)
+                
+                owner.year.onNext(component.year!) //옵셔널 바인딩 필요
+                owner.month.onNext(component.month!)
+                owner.day.onNext(component.day!)
+                
+            } onDisposed: { owner in
+                print("birthday dispose")
+            }
+            .dispose() // 즉시 리소스 정리
     }
     
     @objc func nextButtonClicked() {

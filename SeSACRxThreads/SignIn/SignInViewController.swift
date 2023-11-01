@@ -7,6 +7,8 @@
 
 import UIKit
 import SnapKit
+import RxSwift
+import RxCocoa
 
 class SignInViewController: UIViewController {
 
@@ -16,6 +18,11 @@ class SignInViewController: UIViewController {
     let signUpButton = UIButton()
     
     let test = UISwitch()
+//    let isOn = Observable.of(true) //Observable 이벤트를 생성하고 전달하는 것만 가능하다
+//    let isOn = BehaviorSubject(value: true) //값을 전달하고 받는 것도 가능하다
+    let isOn = PublishSubject<Bool>() //초기값이 없다
+
+    let disposeBag = DisposeBag()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -37,11 +44,29 @@ class SignInViewController: UIViewController {
             make.leading.equalTo(100)
         }
         
-        test.setOn(true, animated: false)
         
+//        isOn
+//            .subscribe { value in
+//                self.test.setOn(value, animated: false)
+//            }
+//            .disposed(by: disposeBag)
+//
+        isOn
+            .bind(to: test.rx.isOn) //rxcocoa
+            .disposed(by: disposeBag)
+        
+        isOn.onNext(true) //구독 이후에 이벤트를 전달해야 실행된다!!
+
         DispatchQueue.main.asyncAfter(deadline: .now() + 2 ) {
-            self.test.setOn(false, animated: false)
+            self.isOn.onNext(false)
         }
+        
+        //UIKit
+//        test.setOn(true, animated: false)
+//
+//        DispatchQueue.main.asyncAfter(deadline: .now() + 2 ) {
+//            self.test.setOn(false, animated: false)
+//        }
     }
     
     @objc func signUpButtonClicked() {
