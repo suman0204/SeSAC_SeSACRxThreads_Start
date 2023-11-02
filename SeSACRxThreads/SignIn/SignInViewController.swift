@@ -22,12 +22,13 @@ class SignInViewController: UIViewController {
 //    let isOn = BehaviorSubject(value: true) //값을 전달하고 받는 것도 가능하다
     let isOn = PublishSubject<Bool>() //초기값이 없다
 
-    let disposeBag = DisposeBag()
+    var disposeBag = DisposeBag()
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        testSwitch()
+//        testSwitch()
+//        incrementExample()
         
         view.backgroundColor = Color.white
         
@@ -35,6 +36,107 @@ class SignInViewController: UIViewController {
         configure()
         
         signUpButton.addTarget(self, action: #selector(signUpButtonClicked), for: .touchUpInside)
+        
+        bind()
+        
+        aboutCombineLatest()
+        
+    }
+    
+    func aboutCombineLatest() {
+        let a = PublishSubject<Int>() //BehaviorSubject(value: 3)
+        let b = PublishSubject<String>() //BehaviorSubject(value: "가")
+        
+        //combineLatest는 이벤트 방출(next)이 한 번이라도 일어나야 동작한다
+        Observable.combineLatest(a, b) { first, second in
+            return "결과: \(first) 그리고 \(second)"
+        }
+        .subscribe(with: self) { owner, data in
+            print(data)
+        }
+        .disposed(by: disposeBag)
+        
+        a.onNext(2)
+        a.onNext(8)
+        a.onNext(5)
+        
+        b.onNext("나")
+        b.onNext("다")
+    }
+    
+    func bind() {
+        
+        //빈 문자열이 들어가는 것이 이벤트이기 때문에 combineLatest가 동작
+        let email = emailTextField.rx.text.orEmpty //UITextFiled를 rx로 사용하기 위해서 랩핑
+        let password = passwordTextField.rx.text.orEmpty
+        
+        let validation = Observable.combineLatest(email, password) { email, password in
+            return email.count > 8 && password.count > 6
+        }
+        
+        validation
+            .subscribe(with: self) { owner, value in
+                owner.signInButton.backgroundColor = value ? UIColor.blue : UIColor.red
+                owner.emailTextField.layer.borderColor = value ? UIColor.blue.cgColor : UIColor.red.cgColor
+                owner.passwordTextField.layer.borderColor = value ? UIColor.blue.cgColor : UIColor.red.cgColor
+            }
+            .disposed(by: disposeBag)
+//            .bind(to: signInButton.rx.isEnabled)
+//            .disposed(by: disposeBag)
+        
+        signInButton.rx.tap
+            .subscribe(with: self) { owner, value in
+                print("SELECT")
+            }
+            .disposed(by: disposeBag)
+    }
+    
+    func incrementExample() {
+        let increment = Observable<Int>.interval(.seconds(1), scheduler: MainScheduler.instance)
+        
+        increment
+            .subscribe(with: self) { owner, value in
+                print("next - \(value)")
+            } onError: { owner, error in
+                print("error - \(error)")
+            } onCompleted: { owener in
+                print("completed")
+            } onDisposed: { owenr in
+                print("disposed")
+            }
+            .disposed(by: disposeBag)
+        
+        increment
+            .subscribe(with: self) { owner, value in
+                print("next - \(value)")
+            } onError: { owner, error in
+                print("error - \(error)")
+            } onCompleted: { owener in
+                print("completed")
+            } onDisposed: { owenr in
+                print("disposed")
+            }
+            .disposed(by: disposeBag)
+        
+        increment
+            .subscribe(with: self) { owner, value in
+                print("next - \(value)")
+            } onError: { owner, error in
+                print("error - \(error)")
+            } onCompleted: { owener in
+                print("completed")
+            } onDisposed: { owenr in
+                print("disposed")
+            }
+            .disposed(by: disposeBag)
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            self.disposeBag = DisposeBag()
+//            incrementValue.dispose()
+//            incrementValue2.dispose()
+//            incrementValue3.dispose()
+        }
+
     }
     
     func testSwitch() {

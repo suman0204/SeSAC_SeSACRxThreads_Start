@@ -9,12 +9,12 @@ import UIKit
 
 enum Color {
     // xcode 15
-//    static let black: UIColor = .textPoint
-//    static let white: UIColor = .viewPoints
+    static let black: UIColor = .textPoint
+    static let white: UIColor = .viewPoint
     
     static let jack: UIColor = UIColor(named: "jackBorder")!
     // xcode 14
-    static let black: UIColor = UIColor(named: "textPoint")!
-    static let white: UIColor = UIColor(named: "viewPoint")!
+//    static let black: UIColor = UIColor(named: "textPoint")!
+//    static let white: UIColor = UIColor(named: "viewPoint")!
     
 }
