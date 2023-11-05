@@ -86,15 +86,17 @@ class SignInViewController: UIViewController {
         
         signInButton.rx.tap
             .subscribe(with: self) { owner, value in
-                print("SELECT")
+                owner.navigationController?.pushViewController(SearchViewController(), animated: true)
             }
             .disposed(by: disposeBag)
     }
     
     func incrementExample() {
-        let increment = Observable<Int>.interval(.seconds(1), scheduler: MainScheduler.instance)
-        
-        increment
+        let incrementValue = Observable<Int>.interval(.seconds(1), scheduler: MainScheduler.instance)
+        let incrementValue2 = Observable<Int>.interval(.seconds(1), scheduler: MainScheduler.instance)
+        let incrementValue3 = Observable<Int>.interval(.seconds(1), scheduler: MainScheduler.instance)
+
+        incrementValue
             .subscribe(with: self) { owner, value in
                 print("next - \(value)")
             } onError: { owner, error in
@@ -106,7 +108,7 @@ class SignInViewController: UIViewController {
             }
             .disposed(by: disposeBag)
         
-        increment
+        incrementValue2
             .subscribe(with: self) { owner, value in
                 print("next - \(value)")
             } onError: { owner, error in
@@ -118,7 +120,7 @@ class SignInViewController: UIViewController {
             }
             .disposed(by: disposeBag)
         
-        increment
+        incrementValue3
             .subscribe(with: self) { owner, value in
                 print("next - \(value)")
             } onError: { owner, error in
