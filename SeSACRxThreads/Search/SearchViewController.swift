@@ -32,7 +32,8 @@ class SearchViewController: UIViewController {
     
     let searchBar = UISearchBar()
     
-    var data = ["A", "B", "C", "AB", "D", "ABC"]
+    var data: [AppInfo] = []
+    //= ["A", "B", "C", "AB", "D", "ABC"]
      
     lazy var items = BehaviorSubject(value: data)
     
@@ -48,7 +49,7 @@ class SearchViewController: UIViewController {
         configure()
         bind()
         
-        setSearchController()
+//        setSearchController()
         
     }
      
@@ -56,7 +57,7 @@ class SearchViewController: UIViewController {
         
         items // cellForRowAt
             .bind(to: tableView.rx.items(cellIdentifier: SearchTableViewCell.identifier, cellType: SearchTableViewCell.self)) { (row, element, cell) in
-                cell.appNameLabel.text = element
+                cell.appNameLabel.text = element.trackName
                 cell.appIconImageView.backgroundColor = .green
                 
                 cell.downloadButton.rx.tap
@@ -66,6 +67,27 @@ class SearchViewController: UIViewController {
                     }
                     .disposed(by: cell.disposeBag) // cell에 들어있는 disposeBag과 연결
             }
+            .disposed(by: disposeBag)
+        
+        
+        //1.subscribe를 사용하려면 - share사용, observeOn를 통해 main에서 UI처리
+        //2. bind - share사용, bind는 main에서 UI처리 해줌
+        //3. drive - share가 내장, UI처리를 main에서 처리해줌을 보장
+        
+        let request = BasicAPIManager.fetchData()
+            .asDriver(onErrorJustReturn: SearchAppModel(resultCount: 0, results: []))
+        
+        request
+            .drive(with: self) { owner, result in
+                owner.items.onNext(result.results)
+            }
+            .disposed(by: disposeBag)
+        
+        request
+            .map { data in
+                "\(data.results.count)개의 검색 결과"
+            }
+            .drive(navigationItem.rx.title)
             .disposed(by: disposeBag)
         
         //didSelectRowAt
@@ -81,45 +103,45 @@ class SearchViewController: UIViewController {
 //            }
 //            .disposed(by: disposeBag)
 
-        Observable.zip(tableView.rx.itemSelected, tableView.rx.modelSelected(String.self))
-            .map { "셀 선택 \($0) \($1)"}
-            .bind(to: navigationItem.rx.title)
-//            .subscribe(with: self, onNext: { owner, value in
-//                owner.navigationItem.title = value
+//        Observable.zip(tableView.rx.itemSelected, tableView.rx.modelSelected(String.self))
+//            .map { "셀 선택 \($0) \($1)"}
+//            .bind(to: navigationItem.rx.title)
+////            .subscribe(with: self, onNext: { owner, value in
+////                owner.navigationItem.title = value
+////            })
+////            .subscribe(with: self) { owner, value in
+////                print(value)
+////            }
+//            .disposed(by: disposeBag)
+//        
+//        
+//        
+//        //SearchBar에 입력한 text를 리턴시 클릭 시 배열에 추가
+//        //입력된 text 옵셔널 바인딩 -> append -> reloadData
+//        //SearchBarDelegate searchButtonClicked
+//        searchBar.rx.searchButtonClicked
+//            .withLatestFrom(searchBar.rx.text.orEmpty, resultSelector: { void, text in
+//                return text
 //            })
+//            .subscribe(with: self, onNext: { owner, text in
+//                print(text)
+//                owner.data.insert(text, at: 0)
+//                owner.items.onNext(owner.data)
+//            })
+//            .disposed(by: disposeBag)
+//        
+//        searchBar.rx.text.orEmpty
+//            .debounce(RxTimeInterval.seconds(1), scheduler: MainScheduler.instance)
+//            .distinctUntilChanged()
 //            .subscribe(with: self) { owner, value in
 //                print(value)
+//                
+//                let result = value == "" ? owner.data : owner.data.filter { $0.contains(value) }
+//                owner.items.onNext(result)
+//                
+//                print("==실시간 검색== \(value)")
 //            }
-            .disposed(by: disposeBag)
-        
-        
-        
-        //SearchBar에 입력한 text를 리턴시 클릭 시 배열에 추가
-        //입력된 text 옵셔널 바인딩 -> append -> reloadData
-        //SearchBarDelegate searchButtonClicked
-        searchBar.rx.searchButtonClicked
-            .withLatestFrom(searchBar.rx.text.orEmpty, resultSelector: { void, text in
-                return text
-            })
-            .subscribe(with: self, onNext: { owner, text in
-                print(text)
-                owner.data.insert(text, at: 0)
-                owner.items.onNext(owner.data)
-            })
-            .disposed(by: disposeBag)
-        
-        searchBar.rx.text.orEmpty
-            .debounce(RxTimeInterval.seconds(1), scheduler: MainScheduler.instance)
-            .distinctUntilChanged()
-            .subscribe(with: self) { owner, value in
-                print(value)
-                
-                let result = value == "" ? owner.data : owner.data.filter { $0.contains(value) }
-                owner.items.onNext(result)
-                
-                print("==실시간 검색== \(value)")
-            }
-            .disposed(by: disposeBag)
+//            .disposed(by: disposeBag)
         
     }
     
